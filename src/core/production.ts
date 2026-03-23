@@ -2,11 +2,11 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import createDebug from 'debug';
 import { Context, Telegraf } from 'telegraf';
 import { Update } from 'telegraf/typings/core/types/typegram';
-import { greeting } from '../text';
+import { getGoldPrice } from '../index';
 const debug = createDebug('bot:dev');
 
 const PORT = (process.env.PORT && parseInt(process.env.PORT, 10)) || 3000;
-const VERCEL_URL = `${process.env.VERCEL_URL}`;
+const VERCEL_URL = 'https://telegram-bot-template-eight.vercel.app'
 
 const production = async (
   req: VercelRequest,
@@ -21,19 +21,16 @@ const production = async (
   }
 
   const getWebhookInfo = await bot.telegram.getWebhookInfo();
-  console.log('getWebhookInfo', getWebhookInfo);
   if (getWebhookInfo.url !== VERCEL_URL + '/api') {
     debug(`deleting webhook ${VERCEL_URL}`);
     await bot.telegram.deleteWebhook();
     debug(`setting webhook: ${VERCEL_URL}/api`);
     await bot.telegram.setWebhook(`${VERCEL_URL}/api`);
   }
-
   if (req.method === 'POST') {
     await bot.handleUpdate(req.body as unknown as Update, res);
   } else {
-    bot.on('message', greeting());
-    res.status(200).json('Listening to bot events...');
+    await getGoldPrice(req, res);
   }
   debug(`starting webhook on port: ${PORT}`);
 };
